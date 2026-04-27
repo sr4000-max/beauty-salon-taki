@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" preserveAspectRatio="xMidYMid meet">
+  <!-- "Beauty Salon" text -->
+  <text x="180" y="48" text-anchor="middle"
+        font-family="'Cormorant Garamond', Georgia, 'Times New Roman', serif"
+        font-size="34" font-weight="400" letter-spacing="1" fill="#2c251f">Beauty Salon</text>
+
+  <!-- "T" -->
+  <text x="60" y="135" text-anchor="middle"
+        font-family="'Cormorant Garamond', Georgia, 'Times New Roman', serif"
+        font-size="80" font-weight="500" fill="#2c251f">T</text>
+
+  <!-- Scissors as "A" -->
+  <g transform="translate(125, 65)" fill="none" stroke="#d61e2c" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Closed blade tips at top (two parallel lines) -->
+    <line x1="32" y1="2" x2="29" y2="32"/>
+    <line x1="38" y1="2" x2="41" y2="32"/>
+    <!-- Pivot -->
+    <circle cx="35" cy="36" r="3.5" fill="#d61e2c" stroke="none"/>
+    <!-- Handles diverging downward -->
+    <line x1="32" y1="38" x2="14" y2="60"/>
+    <line x1="38" y1="38" x2="56" y2="60"/>
+    <!-- Finger holes -->
+    <circle cx="10" cy="65" r="9"/>
+    <circle cx="60" cy="65" r="9"/>
+  </g>
+
+  <!-- "K" -->
+  <text x="232" y="135" text-anchor="middle"
+        font-family="'Cormorant Garamond', Georgia, 'Times New Roman', serif"
+        font-size="80" font-weight="500" fill="#2c251f">K</text>
+  <!-- "I" -->
+  <text x="290" y="135" text-anchor="middle"
+        font-family="'Cormorant Garamond', Georgia, 'Times New Roman', serif"
+        font-size="80" font-weight="500" fill="#2c251f">I</text>
+</svg>

@@ -1,0 +1,10 @@
+/* レイヤー順を明示的に宣言する。
+ *   theme(色トークン)  < base(preflight)  < components  < taki(独自CSS)  < utilities
+ *
+ * - taki が base より後ろ → TAKI の `.section-title { font-size: 32px }` が
+ *   Tailwind preflight の `h2 { font-size: inherit }` に勝つ
+ * - taki が utilities より前 → Tailwind の `mx-auto`, `bg-stone-900` 等が
+ *   TAKI の `* { margin: 0 }` や `button { ... }` に勝つ
+ */
+@layer theme, base, components, taki, utilities;
+@import "tailwindcss";

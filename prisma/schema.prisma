@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Store {
+  id            Int            @id @default(autoincrement())
+  name          String
+  phone         String?
+  address       String?
+  adminEmail    String?
+  slotMinutes   Int            @default(30)
+  businessHours BusinessHour[]
+}
+
+model MenuCategory {
+  id        Int    @id @default(autoincrement())
+  name      String
+  sortOrder Int    @default(0)
+  menus     Menu[]
+}
+
+model Holiday {
+  id   Int      @id @default(autoincrement())
+  date DateTime @unique
+  note String?
+}
+
+model BusinessHour {
+  id        Int     @id @default(autoincrement())
+  storeId   Int
+  dayOfWeek Int
+  isClosed  Boolean @default(false)
+  openMin   Int     @default(600)
+  closeMin  Int     @default(1140)
+  store     Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, dayOfWeek])
+}
+
+model Staff {
+  id           Int           @id @default(autoincrement())
+  name         String
+  color        String        @default("#94a3b8")
+  workDays     String        @default("1,2,3,4,5,6")
+  active       Boolean       @default(true)
+  sortOrder    Int           @default(0)
+  reservations Reservation[]
+  blocks       Block[]
+}
+
+model Block {
+  id       Int      @id @default(autoincrement())
+  date     DateTime
+  startMin Int
+  endMin   Int
+  staffId  Int?
+  note     String?
+  staff    Staff?   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([date])
+  @@index([staffId, date])
+}
+
+model Menu {
+  id                 Int                    @id @default(autoincrement())
+  name               String
+  description        String?
+  priceYen           Int
+  durationMinutes    Int
+  active             Boolean                @default(true)
+  sortOrder          Int                    @default(0)
+  categoryId         Int?
+  category           MenuCategory?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  reservations       Reservation[]
+  reservationExtras  ReservationExtraMenu[]
+}
+
+model Reservation {
+  id            Int                    @id @default(autoincrement())
+  customerName  String
+  customerKana  String?
+  customerPhone String
+  customerEmail String?
+  notes         String?
+  menuId        Int
+  staffId       Int?
+  startAt       DateTime
+  endAt         DateTime
+  status        String                 @default("BOOKED")
+  source        String                 @default("WEB")
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  menu          Menu                   @relation(fields: [menuId], references: [id])
+  staff         Staff?                 @relation(fields: [staffId], references: [id])
+  extras        ReservationExtraMenu[]
+
+  @@index([startAt])
+  @@index([staffId, startAt])
+}
+
+model ReservationExtraMenu {
+  id            Int         @id @default(autoincrement())
+  reservationId Int
+  menuId        Int
+  sortOrder     Int         @default(0)
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  menu          Menu        @relation(fields: [menuId], references: [id])
+
+  @@unique([reservationId, menuId])
+  @@index([reservationId])
+}

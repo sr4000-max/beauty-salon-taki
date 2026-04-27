@@ -66,6 +66,7 @@ export type ReservationMailInput = {
   startAt: Date;
   endAt: Date;
   notes: string | null;
+  cancelUrl: string | null;
 };
 
 function fmtDate(d: Date): string {
@@ -102,10 +103,14 @@ export async function sendReservationEmails(
     startAt,
     endAt,
     notes,
+    cancelUrl,
   } = input;
 
   const dateLine = `${fmtDate(startAt)} 〜 ${fmtHm(endAt)}`;
   const menuList = menuLines(menus);
+  const cancelBlock = cancelUrl
+    ? `\nご予約のキャンセルは以下のURLから可能です（24時間受付）:\n${cancelUrl}\n`
+    : "";
 
   const customerBody = `${customerName} 様
 
@@ -122,7 +127,7 @@ ${menuList}
 
 合計: ¥${totalPrice.toLocaleString()}（税込） / 約${totalDuration}分
 ${notes ? `\nご要望: ${notes}\n` : ""}----------------------------------------
-
+${cancelBlock}
 ご来店をお待ちしております。
 
 ${storeName}${storePhone ? "\nTEL: " + storePhone : ""}
@@ -154,6 +159,79 @@ ${notes ? `\nご要望: ${notes}\n` : ""}---------------------------------------
       ? sendMail({
           to: adminEmail,
           subject: `【予約通知】${customerName} 様 - ${dateLine}`,
+          text: adminBody,
+        })
+      : Promise.resolve(),
+  ]);
+}
+
+export type CancellationMailInput = Omit<ReservationMailInput, "notes" | "cancelUrl">;
+
+export async function sendCancellationEmails(
+  input: CancellationMailInput,
+): Promise<void> {
+  const {
+    customerName,
+    customerEmail,
+    adminEmail,
+    storeName,
+    storePhone,
+    menus,
+    totalPrice,
+    totalDuration,
+    staffName,
+    startAt,
+    endAt,
+  } = input;
+
+  const dateLine = `${fmtDate(startAt)} 〜 ${fmtHm(endAt)}`;
+  const menuList = menuLines(menus);
+
+  const customerBody = `${customerName} 様
+
+下記のご予約をキャンセルいたしました。
+
+----------------------------------------
+日時: ${dateLine}
+担当: ${staffName ?? "—"}
+
+メニュー（${menus.length}件）:
+${menuList}
+
+合計: ¥${totalPrice.toLocaleString()} / 約${totalDuration}分
+----------------------------------------
+
+またのご利用をお待ちしております。
+
+${storeName}${storePhone ? "\nTEL: " + storePhone : ""}
+`;
+
+  const adminBody = `予約がキャンセルされました（お客様による自己キャンセル）。
+
+----------------------------------------
+日時: ${dateLine}
+お客様: ${customerName}
+担当: ${staffName ?? "—"}
+
+メニュー（${menus.length}件）:
+${menuList}
+
+合計: ¥${totalPrice.toLocaleString()} / 約${totalDuration}分
+----------------------------------------
+`;
+
+  await Promise.all([
+    customerEmail
+      ? sendMail({
+          to: customerEmail,
+          subject: `【${storeName}】ご予約キャンセルのお知らせ`,
+          text: customerBody,
+        })
+      : Promise.resolve(),
+    adminEmail
+      ? sendMail({
+          to: adminEmail,
+          subject: `【キャンセル通知】${customerName} 様 - ${dateLine}`,
           text: adminBody,
         })
       : Promise.resolve(),

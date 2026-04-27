@@ -2,15 +2,27 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { isSlotStillFree, parseMenuIds } from "@/lib/availability";
 import { combineDateAndMin } from "@/lib/time";
-import { sendReservationEmails } from "@/lib/mailer";
+import { sendReservationEmails, sendCancellationEmails } from "@/lib/mailer";
 
 const PENDING_COOKIE = "pending_reservation";
+
+function generateCancelToken(): string {
+  return randomBytes(16).toString("hex");
+}
+
+async function buildBaseUrl(): Promise<string> {
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto") ?? "http";
+  const host = h.get("host") ?? "localhost:3000";
+  return `${proto}://${host}`;
+}
 
 const pendingSchema = z.object({
   menuIds: z.array(z.number().int().positive()).min(1),
@@ -20,7 +32,7 @@ const pendingSchema = z.object({
   customerName: z.string().min(1).max(50),
   customerKana: z.string().max(50).optional().nullable(),
   customerPhone: z.string().min(1).max(40),
-  customerEmail: z.string().email().optional().or(z.literal("")).nullable(),
+  customerEmail: z.string().email(),
   notes: z.string().max(500).optional().nullable(),
 });
 
@@ -62,12 +74,7 @@ const formSchema = z.object({
   customerName: z.string().min(1).max(50),
   customerKana: z.string().max(50).optional().or(z.literal("")),
   customerPhone: z.string().min(1).max(40),
-  customerEmail: z
-    .string()
-    .email()
-    .optional()
-    .or(z.literal(""))
-    .or(z.null()),
+  customerEmail: z.string().email("正しいメールアドレスを入力してください"),
   notes: z.string().max(500).optional().or(z.literal("")),
 });
 
@@ -95,7 +102,7 @@ export async function savePendingFromFormAction(formData: FormData) {
     customerName: parsed.customerName,
     customerKana: parsed.customerKana || null,
     customerPhone: parsed.customerPhone,
-    customerEmail: parsed.customerEmail || null,
+    customerEmail: parsed.customerEmail,
     notes: parsed.notes || null,
   });
 
@@ -119,10 +126,7 @@ export async function confirmReservationAction() {
     .map((id) => menus.find((m) => m.id === id))
     .filter((m): m is (typeof menus)[number] => !!m);
 
-  const totalDuration = orderedMenus.reduce(
-    (s, m) => s + m.durationMinutes,
-    0,
-  );
+  const totalDuration = orderedMenus.reduce((s, m) => s + m.durationMinutes, 0);
   const totalPrice = orderedMenus.reduce((s, m) => s + m.priceYen, 0);
 
   const startAt = combineDateAndMin(pending.date, pending.startMin);
@@ -141,6 +145,7 @@ export async function confirmReservationAction() {
 
   const primary = orderedMenus[0];
   const extras = orderedMenus.slice(1);
+  const cancelToken = generateCancelToken();
 
   await prisma.reservation.create({
     data: {
@@ -155,6 +160,7 @@ export async function confirmReservationAction() {
       endAt,
       source: "WEB",
       status: "BOOKED",
+      cancelToken,
       extras: {
         create: extras.map((m, i) => ({
           menuId: m.id,
@@ -164,13 +170,14 @@ export async function confirmReservationAction() {
     },
   });
 
-  const [store, staff] = await Promise.all([
+  const [store, staff, baseUrl] = await Promise.all([
     prisma.store.findFirst(),
     prisma.staff.findUnique({ where: { id: slot.staffId } }),
+    buildBaseUrl(),
   ]);
   await sendReservationEmails({
     customerName: pending.customerName,
-    customerEmail: pending.customerEmail ?? null,
+    customerEmail: pending.customerEmail,
     adminEmail: store?.adminEmail ?? null,
     storeName: store?.name ?? "サロン",
     storePhone: store?.phone ?? null,
@@ -185,6 +192,7 @@ export async function confirmReservationAction() {
     startAt,
     endAt,
     notes: pending.notes ?? null,
+    cancelUrl: `${baseUrl}/cancel/${cancelToken}`,
   });
 
   await clearPendingReservation();
@@ -267,6 +275,8 @@ export async function createAdminReservationAction(formData: FormData) {
     }
   }
 
+  const cancelToken = parsed.customerEmail ? generateCancelToken() : null;
+
   await prisma.reservation.create({
     data: {
       customerName: parsed.customerName,
@@ -280,15 +290,17 @@ export async function createAdminReservationAction(formData: FormData) {
       endAt,
       source: "ADMIN",
       status: "BOOKED",
+      cancelToken,
       extras: {
         create: extraIds.map((id, i) => ({ menuId: id, sortOrder: i })),
       },
     },
   });
 
-  const [store, staff] = await Promise.all([
+  const [store, staff, baseUrl] = await Promise.all([
     prisma.store.findFirst(),
     prisma.staff.findUnique({ where: { id: parsed.staffId } }),
+    buildBaseUrl(),
   ]);
   await sendReservationEmails({
     customerName: parsed.customerName,
@@ -307,6 +319,7 @@ export async function createAdminReservationAction(formData: FormData) {
     startAt,
     endAt,
     notes: parsed.notes || null,
+    cancelUrl: cancelToken ? `${baseUrl}/cancel/${cancelToken}` : null,
   });
 
   revalidatePath("/admin");
@@ -328,4 +341,55 @@ export async function updateReservationStatusAction(formData: FormData) {
   revalidatePath("/admin/calendar");
   revalidatePath("/admin/reservations");
   revalidatePath(`/admin/reservations/${id}`);
+}
+
+export async function cancelByTokenAction(formData: FormData) {
+  const token = String(formData.get("token") ?? "");
+  if (!token) return { error: "キャンセル用のリンクが無効です" };
+
+  const r = await prisma.reservation.findUnique({
+    where: { cancelToken: token },
+    include: {
+      menu: true,
+      staff: true,
+      extras: { include: { menu: true }, orderBy: { sortOrder: "asc" } },
+    },
+  });
+  if (!r) return { error: "予約が見つかりません" };
+  if (r.status === "CANCELLED") return { error: "この予約は既にキャンセル済みです" };
+  if (r.startAt < new Date())
+    return { error: "予約時刻を過ぎているためキャンセルできません" };
+
+  await prisma.reservation.update({
+    where: { id: r.id },
+    data: { status: "CANCELLED" },
+  });
+
+  const allMenus = [r.menu, ...r.extras.map((e) => e.menu)];
+  const totalPrice = allMenus.reduce((s, m) => s + m.priceYen, 0);
+  const totalDuration = allMenus.reduce((s, m) => s + m.durationMinutes, 0);
+
+  const store = await prisma.store.findFirst();
+  await sendCancellationEmails({
+    customerName: r.customerName,
+    customerEmail: r.customerEmail,
+    adminEmail: store?.adminEmail ?? null,
+    storeName: store?.name ?? "サロン",
+    storePhone: store?.phone ?? null,
+    menus: allMenus.map((m) => ({
+      name: m.name,
+      priceYen: m.priceYen,
+      durationMinutes: m.durationMinutes,
+    })),
+    totalPrice,
+    totalDuration,
+    staffName: r.staff?.name ?? null,
+    startAt: r.startAt,
+    endAt: r.endAt,
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/calendar");
+  revalidatePath("/admin/reservations");
+  return { success: true };
 }

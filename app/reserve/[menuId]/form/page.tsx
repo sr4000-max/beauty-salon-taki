@@ -176,14 +176,18 @@ export default async function ReserveFormPage({
                 placeholder="090-0000-0000"
               />
             </Field>
-            <Field label="メールアドレス">
+            <Field label="メールアドレス" required>
               <input
                 type="email"
                 name="customerEmail"
+                required
                 maxLength={100}
                 className="w-full border border-[var(--color-line)] rounded-sm px-3 py-2 focus:outline-none focus:border-[var(--color-accent)]"
-                placeholder="ご予約確認メールをお送りします"
+                placeholder="example@email.com"
               />
+              <p className="text-xs text-[color:var(--color-text-light)] mt-1">
+                予約確認メールとキャンセル用URLをお送りします。
+              </p>
             </Field>
             <Field label="ご要望（任意）">
               <textarea

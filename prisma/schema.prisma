@@ -93,6 +93,7 @@ model Reservation {
   endAt         DateTime
   status        String                 @default("BOOKED")
   source        String                 @default("WEB")
+  cancelToken   String?                @unique
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   menu          Menu                   @relation(fields: [menuId], references: [id])

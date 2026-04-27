@@ -46,6 +46,8 @@ next-env.d.ts
 # local SQLite (legacy) — will be removed after migration to Neon
 prisma/dev.db
 prisma/dev.db-journal
+/dev.db
+/dev.db-journal
 
 # data snapshot containing customer/reservation data — never commit
 prisma/data-snapshot.json

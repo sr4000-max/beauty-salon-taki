@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { computeAvailability, parseMenuIds } from "@/lib/availability";
+import { computeAvailabilityRange, parseMenuIds } from "@/lib/availability";
 import {
   addDays,
   dateToYmd,
@@ -76,15 +76,12 @@ export default async function ReservePage({
     addDays(startDate, i),
   );
 
-  const availabilities = await Promise.all(
-    dates.map((d) =>
-      computeAvailability({
-        date: dateToYmd(d),
-        menuIds,
-        staffId: selectedStaffId,
-      }),
-    ),
-  );
+  const availabilities = await computeAvailabilityRange({
+    startDate: dateToYmd(dates[0]),
+    numDays: DAYS_TO_SHOW,
+    menuIds,
+    staffId: selectedStaffId,
+  });
 
   const allTimeSlots = collectAllSlots(availabilities);
 

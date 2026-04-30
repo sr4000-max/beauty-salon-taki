@@ -1,0 +1,33 @@
+name: Send reservation reminders
+
+on:
+  schedule:
+    # 5 分ごと (UTC) — GitHub Actions cron は混雑時 5〜10 分遅延することがある
+    - cron: "*/5 * * * *"
+  # 手動実行用 (GitHub UI から「Run workflow」で叩ける)
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Hit /api/cron/reminders
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            APP_URL="https://beauty-salon-taki.vercel.app"
+          fi
+          echo "Calling ${APP_URL}/api/cron/reminders ..."
+          response=$(curl -sS -w "\n%{http_code}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${APP_URL}/api/cron/reminders")
+          body=$(echo "$response" | sed '$d')
+          status=$(echo "$response" | tail -n1)
+          echo "HTTP ${status}"
+          echo "Body: ${body}"
+          if [ "$status" != "200" ]; then
+            exit 1
+          fi

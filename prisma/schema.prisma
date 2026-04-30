@@ -81,27 +81,31 @@ model Menu {
 }
 
 model Reservation {
-  id            Int                    @id @default(autoincrement())
-  customerName  String
-  customerKana  String?
-  customerPhone String
-  customerEmail String?
-  notes         String?
-  menuId        Int
-  staffId       Int?
-  startAt       DateTime
-  endAt         DateTime
-  status        String                 @default("BOOKED")
-  source        String                 @default("WEB")
-  cancelToken   String?                @unique
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  menu          Menu                   @relation(fields: [menuId], references: [id])
-  staff         Staff?                 @relation(fields: [staffId], references: [id])
-  extras        ReservationExtraMenu[]
+  id                          Int                    @id @default(autoincrement())
+  customerName                String
+  customerKana                String?
+  customerPhone               String
+  customerEmail               String?
+  notes                       String?
+  menuId                      Int
+  staffId                     Int?
+  startAt                     DateTime
+  endAt                       DateTime
+  status                      String                 @default("BOOKED")
+  source                      String                 @default("WEB")
+  cancelToken                 String?                @unique
+  reminderDayBeforeSentAt     DateTime?
+  reminderShortBeforeSentAt   DateTime?
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  menu                        Menu                   @relation(fields: [menuId], references: [id])
+  staff                       Staff?                 @relation(fields: [staffId], references: [id])
+  extras                      ReservationExtraMenu[]
 
   @@index([startAt])
   @@index([staffId, startAt])
+  @@index([status, startAt, reminderDayBeforeSentAt])
+  @@index([status, startAt, reminderShortBeforeSentAt])
 }
 
 model ReservationExtraMenu {

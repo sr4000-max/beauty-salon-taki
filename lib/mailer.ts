@@ -237,3 +237,86 @@ ${menuList}
       : Promise.resolve(),
   ]);
 }
+
+export type ReminderKind = "DAY_BEFORE" | "SHORT_BEFORE";
+
+export type ReminderMailInput = {
+  kind: ReminderKind;
+  customerName: string;
+  customerEmail: string;
+  storeName: string;
+  storePhone: string | null;
+  menus: MailMenu[];
+  totalPrice: number;
+  totalDuration: number;
+  staffName: string | null;
+  startAt: Date;
+  endAt: Date;
+  cancelUrl: string | null;
+};
+
+export async function sendReminderEmail(
+  input: ReminderMailInput,
+): Promise<void> {
+  const {
+    kind,
+    customerName,
+    customerEmail,
+    storeName,
+    storePhone,
+    menus,
+    totalPrice,
+    totalDuration,
+    staffName,
+    startAt,
+    endAt,
+    cancelUrl,
+  } = input;
+
+  const dateLine = `${fmtDate(startAt)} 〜 ${fmtHm(endAt)}`;
+  const menuList = menuLines(menus);
+  const cancelBlock = cancelUrl
+    ? `\nやむを得ずキャンセルされる場合は以下のURLからお手続きください:\n${cancelUrl}\n`
+    : "";
+
+  let subject: string;
+  let leadIn: string;
+
+  if (kind === "DAY_BEFORE") {
+    subject = `【${storeName}】明日のご予約のご案内`;
+    leadIn = `${customerName} 様
+
+明日のご予約のご案内です。
+お間違いのないよう、念のためお時間をご確認くださいませ。`;
+  } else {
+    subject = `【${storeName}】まもなくご予約のお時間です`;
+    leadIn = `${customerName} 様
+
+まもなくご予約のお時間が近づいてまいりました。
+お気をつけてお越しくださいませ。`;
+  }
+
+  const body = `${leadIn}
+
+----------------------------------------
+■ ご予約内容
+日時: ${dateLine}
+担当: ${staffName ?? "—"}
+
+メニュー（${menus.length}件）:
+${menuList}
+
+合計: ¥${totalPrice.toLocaleString()}（税込） / 約${totalDuration}分
+----------------------------------------
+${cancelBlock}
+ご来店をお待ちしております。
+
+${storeName}${storePhone ? "\nTEL: " + storePhone : ""}
+`;
+
+  await sendMail({
+    to: customerEmail,
+    subject,
+    text: body,
+  });
+}

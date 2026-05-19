@@ -81,8 +81,16 @@ export function MenuSelector({ groups }: { groups: CategoryGroup[] }) {
           type="button"
           onClick={proceed}
           disabled={selected.size === 0}
-          className="btn-primary"
-          style={{ padding: "12px 28px" }}
+          className={`px-7 py-3 rounded-sm font-medium tracking-wider text-white text-base transition-all shadow-md ${
+            selected.size === 0
+              ? "bg-stone-300 cursor-not-allowed"
+              : "shadow-[0_4px_14px_rgba(194,90,58,0.4)] hover:shadow-[0_6px_20px_rgba(194,90,58,0.55)] hover:-translate-y-0.5"
+          }`}
+          style={
+            selected.size === 0
+              ? undefined
+              : { backgroundColor: "#c25a3a" }
+          }
         >
           日時を選ぶ →
         </button>

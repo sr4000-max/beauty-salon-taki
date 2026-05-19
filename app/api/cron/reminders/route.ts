@@ -12,6 +12,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendReminderEmail, type ReminderKind } from "@/lib/mailer";
+import {
+  buildGoogleCalendarUrl,
+  buildReservationCalendarEvent,
+} from "@/lib/calendar";
 
 export const runtime = "nodejs";
 // Cron は静的な return ではなく現時刻に依存するので毎回動的実行する
@@ -68,6 +72,7 @@ async function sendOne(
   baseUrl: string,
   storeInfo: {
     storeName: string;
+    storeAddress: string | null;
     storePhone: string | null;
   },
   r: ReminderRow,
@@ -80,6 +85,21 @@ async function sendOne(
     (s, m) => s + m.durationMinutes,
     0,
   );
+
+  const cancelUrl = r.cancelToken
+    ? `${baseUrl}/cancel/${r.cancelToken}`
+    : null;
+
+  const calendarEvent = buildReservationCalendarEvent({
+    reservationId: r.id,
+    storeName: storeInfo.storeName,
+    storeAddress: storeInfo.storeAddress,
+    storePhone: storeInfo.storePhone,
+    menuNames: orderedMenus.map((m) => m.name),
+    startAt: r.startAt,
+    endAt: r.endAt,
+    cancelUrl,
+  });
 
   await sendReminderEmail({
     kind,
@@ -97,9 +117,8 @@ async function sendOne(
     staffName: r.staff?.name ?? null,
     startAt: r.startAt,
     endAt: r.endAt,
-    cancelUrl: r.cancelToken
-      ? `${baseUrl}/cancel/${r.cancelToken}`
-      : null,
+    cancelUrl,
+    googleCalendarUrl: buildGoogleCalendarUrl(calendarEvent),
   });
 
   const updateField =
@@ -129,6 +148,7 @@ export async function GET(req: NextRequest) {
   const store = await prisma.store.findFirst();
   const storeInfo = {
     storeName: store?.name ?? "サロン",
+    storeAddress: store?.address ?? null,
     storePhone: store?.phone ?? null,
   };
 

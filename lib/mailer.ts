@@ -24,24 +24,45 @@ function getTransport(): Transporter | null {
   return cached;
 }
 
+export type MailAttachment = {
+  filename: string;
+  content: string;
+  contentType: string;
+};
+
 export type MailInput = {
   to: string;
   subject: string;
   text: string;
+  attachments?: MailAttachment[];
 };
 
-export async function sendMail({ to, subject, text }: MailInput): Promise<void> {
+export async function sendMail({
+  to,
+  subject,
+  text,
+  attachments,
+}: MailInput): Promise<void> {
   if (!to) return;
   const t = getTransport();
   const from = process.env.SMTP_FROM ?? "no-reply@example.com";
   if (!t) {
-    console.log("[mail:console]", { from, to, subject });
+    console.log("[mail:console]", {
+      from,
+      to,
+      subject,
+      attachments: attachments?.map((a) => a.filename),
+    });
     console.log(text);
     return;
   }
   try {
-    await t.sendMail({ from, to, subject, text });
-    console.log("[mail:sent]", { to, subject });
+    await t.sendMail({ from, to, subject, text, attachments });
+    console.log("[mail:sent]", {
+      to,
+      subject,
+      attachments: attachments?.map((a) => a.filename),
+    });
   } catch (err) {
     console.error("[mail:error]", err);
   }
@@ -67,6 +88,8 @@ export type ReservationMailInput = {
   endAt: Date;
   notes: string | null;
   cancelUrl: string | null;
+  googleCalendarUrl: string | null;
+  icsContent: string | null;
 };
 
 function fmtDate(d: Date): string {
@@ -111,6 +134,10 @@ export async function sendReservationEmails(
   const cancelBlock = cancelUrl
     ? `\nご予約のキャンセルは以下のURLから可能です（24時間受付）:\n${cancelUrl}\n`
     : "";
+  const calendarBlock = input.googleCalendarUrl
+    ? `\nGoogle カレンダーに追加するには下記をクリック:\n${input.googleCalendarUrl}\n` +
+      `（このメールに添付の .ics ファイルからは Apple / Outlook など他のカレンダーにも追加できます）\n`
+    : "";
 
   const customerBody = `${customerName} 様
 
@@ -127,7 +154,7 @@ ${menuList}
 
 合計: ¥${totalPrice.toLocaleString()}（税込） / 約${totalDuration}分
 ${notes ? `\nご要望: ${notes}\n` : ""}----------------------------------------
-${cancelBlock}
+${calendarBlock}${cancelBlock}
 ご来店をお待ちしております。
 
 ${storeName}${storePhone ? "\nTEL: " + storePhone : ""}
@@ -147,12 +174,23 @@ ${menuList}
 ${notes ? `\nご要望: ${notes}\n` : ""}----------------------------------------
 `;
 
+  const customerAttachments: MailAttachment[] | undefined = input.icsContent
+    ? [
+        {
+          filename: "reservation.ics",
+          content: input.icsContent,
+          contentType: "text/calendar; method=PUBLISH; charset=utf-8",
+        },
+      ]
+    : undefined;
+
   await Promise.all([
     customerEmail
       ? sendMail({
           to: customerEmail,
           subject: `【${storeName}】ご予約ありがとうございます`,
           text: customerBody,
+          attachments: customerAttachments,
         })
       : Promise.resolve(),
     adminEmail
@@ -165,7 +203,10 @@ ${notes ? `\nご要望: ${notes}\n` : ""}---------------------------------------
   ]);
 }
 
-export type CancellationMailInput = Omit<ReservationMailInput, "notes" | "cancelUrl">;
+export type CancellationMailInput = Omit<
+  ReservationMailInput,
+  "notes" | "cancelUrl" | "googleCalendarUrl" | "icsContent"
+>;
 
 export async function sendCancellationEmails(
   input: CancellationMailInput,
@@ -253,6 +294,7 @@ export type ReminderMailInput = {
   startAt: Date;
   endAt: Date;
   cancelUrl: string | null;
+  googleCalendarUrl: string | null;
 };
 
 export async function sendReminderEmail(
@@ -278,6 +320,11 @@ export async function sendReminderEmail(
   const cancelBlock = cancelUrl
     ? `\nやむを得ずキャンセルされる場合は以下のURLからお手続きください:\n${cancelUrl}\n`
     : "";
+  // 1日前リマインダーの時のみ、まだカレンダー追加していない方向けに URL を案内
+  const calendarBlock =
+    kind === "DAY_BEFORE" && input.googleCalendarUrl
+      ? `\nGoogle カレンダーへの追加はこちら:\n${input.googleCalendarUrl}\n`
+      : "";
 
   let subject: string;
   let leadIn: string;
@@ -308,7 +355,7 @@ ${menuList}
 
 合計: ¥${totalPrice.toLocaleString()}（税込） / 約${totalDuration}分
 ----------------------------------------
-${cancelBlock}
+${calendarBlock}${cancelBlock}
 ご来店をお待ちしております。
 
 ${storeName}${storePhone ? "\nTEL: " + storePhone : ""}

@@ -10,6 +10,11 @@ import { requireAdmin } from "@/lib/auth";
 import { isSlotStillFree, parseMenuIds } from "@/lib/availability";
 import { combineDateAndMin } from "@/lib/time";
 import { sendReservationEmails, sendCancellationEmails } from "@/lib/mailer";
+import {
+  buildGoogleCalendarUrl,
+  buildIcsContent,
+  buildReservationCalendarEvent,
+} from "@/lib/calendar";
 
 const PENDING_COOKIE = "pending_reservation";
 
@@ -147,7 +152,7 @@ export async function confirmReservationAction() {
   const extras = orderedMenus.slice(1);
   const cancelToken = generateCancelToken();
 
-  await prisma.reservation.create({
+  const created = await prisma.reservation.create({
     data: {
       customerName: pending.customerName,
       customerKana: pending.customerKana,
@@ -175,6 +180,18 @@ export async function confirmReservationAction() {
     prisma.staff.findUnique({ where: { id: slot.staffId } }),
     buildBaseUrl(),
   ]);
+
+  const calendarEvent = buildReservationCalendarEvent({
+    reservationId: created.id,
+    storeName: store?.name ?? "サロン",
+    storeAddress: store?.address ?? null,
+    storePhone: store?.phone ?? null,
+    menuNames: orderedMenus.map((m) => m.name),
+    startAt,
+    endAt,
+    cancelUrl: `${baseUrl}/cancel/${cancelToken}`,
+  });
+
   await sendReservationEmails({
     customerName: pending.customerName,
     customerEmail: pending.customerEmail,
@@ -193,13 +210,15 @@ export async function confirmReservationAction() {
     endAt,
     notes: pending.notes ?? null,
     cancelUrl: `${baseUrl}/cancel/${cancelToken}`,
+    googleCalendarUrl: buildGoogleCalendarUrl(calendarEvent),
+    icsContent: buildIcsContent(calendarEvent),
   });
 
   await clearPendingReservation();
   revalidatePath("/admin");
   revalidatePath("/admin/calendar");
   revalidatePath("/admin/reservations");
-  redirect("/reserve/complete");
+  redirect(`/reserve/complete?token=${cancelToken}`);
 }
 
 const adminCreateSchema = z.object({
@@ -277,7 +296,7 @@ export async function createAdminReservationAction(formData: FormData) {
 
   const cancelToken = parsed.customerEmail ? generateCancelToken() : null;
 
-  await prisma.reservation.create({
+  const created = await prisma.reservation.create({
     data: {
       customerName: parsed.customerName,
       customerKana: parsed.customerKana || null,
@@ -302,6 +321,18 @@ export async function createAdminReservationAction(formData: FormData) {
     prisma.staff.findUnique({ where: { id: parsed.staffId } }),
     buildBaseUrl(),
   ]);
+
+  const calendarEvent = buildReservationCalendarEvent({
+    reservationId: created.id,
+    storeName: store?.name ?? "サロン",
+    storeAddress: store?.address ?? null,
+    storePhone: store?.phone ?? null,
+    menuNames: orderedMenus.map((m) => m.name),
+    startAt,
+    endAt,
+    cancelUrl: cancelToken ? `${baseUrl}/cancel/${cancelToken}` : null,
+  });
+
   await sendReservationEmails({
     customerName: parsed.customerName,
     customerEmail: parsed.customerEmail || null,
@@ -318,6 +349,10 @@ export async function createAdminReservationAction(formData: FormData) {
     staffName: staff?.name ?? null,
     startAt,
     endAt,
+    googleCalendarUrl: parsed.customerEmail
+      ? buildGoogleCalendarUrl(calendarEvent)
+      : null,
+    icsContent: parsed.customerEmail ? buildIcsContent(calendarEvent) : null,
     notes: parsed.notes || null,
     cancelUrl: cancelToken ? `${baseUrl}/cancel/${cancelToken}` : null,
   });

@@ -1,5 +1,14 @@
 import { prisma } from "./prisma";
-import { addDays, combineDateAndMin, dateToYmd, ymdToDate } from "./time";
+import {
+  addDays,
+  combineDateAndMin,
+  dateToYmd,
+  getJstDate,
+  getJstDayOfWeek,
+  getJstHour,
+  getJstMinute,
+  ymdToDate,
+} from "./time";
 
 export type SlotStatus = "available" | "full" | "closed" | "past";
 
@@ -127,7 +136,7 @@ export async function computeAvailabilityRange(opts: {
 
   return dates.map((date) => {
     const dateObj = ymdToDate(date);
-    const dayOfWeek = dateObj.getDay();
+    const dayOfWeek = getJstDayOfWeek(dateObj);
     const bh = store.businessHours.find((b) => b.dayOfWeek === dayOfWeek);
     if (holidayKeys.has(date) || !bh || bh.isClosed) {
       return { date, isClosed: true, slots: [] };
@@ -221,12 +230,12 @@ export async function isSlotStillFree(opts: {
     return { ok: false, reason: "当日予約は2時間30分後以降のみ受け付けています" };
   }
 
-  const ymd = `${startAt.getFullYear()}-${String(startAt.getMonth() + 1).padStart(2, "0")}-${String(startAt.getDate()).padStart(2, "0")}`;
+  const ymd = dateToYmd(startAt);
   if (await isHoliday(ymd)) {
     return { ok: false, reason: "この日は休業日です" };
   }
 
-  const dayOfWeek = startAt.getDay();
+  const dayOfWeek = getJstDayOfWeek(startAt);
   const candidatesWhere = {
     active: true,
     ...(staffId ? { id: staffId } : {}),
@@ -236,10 +245,11 @@ export async function isSlotStillFree(opts: {
   if (working.length === 0)
     return { ok: false, reason: "対応可能なスタッフがいません" };
 
-  const startMinOfDay = startAt.getHours() * 60 + startAt.getMinutes();
+  const startMinOfDay = getJstHour(startAt) * 60 + getJstMinute(startAt);
   const endMinOfDay =
-    endAt.getHours() * 60 + endAt.getMinutes() +
-    (endAt.getDate() !== startAt.getDate() ? 24 * 60 : 0);
+    getJstHour(endAt) * 60 +
+    getJstMinute(endAt) +
+    (getJstDate(endAt) !== getJstDate(startAt) ? 24 * 60 : 0);
   const dateOnly = ymdToDate(ymd);
 
   const [overlapping, dayBlocks] = await Promise.all([

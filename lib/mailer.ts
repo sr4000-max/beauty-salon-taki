@@ -1,4 +1,12 @@
 import nodemailer, { type Transporter } from "nodemailer";
+import {
+  getJstDate,
+  getJstDayOfWeek,
+  getJstHour,
+  getJstMinute,
+  getJstMonth,
+  getJstYear,
+} from "@/lib/time";
 
 let cached: Transporter | null | undefined;
 
@@ -94,11 +102,11 @@ export type ReservationMailInput = {
 
 function fmtDate(d: Date): string {
   const days = ["日", "月", "火", "水", "木", "金", "土"];
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日(${days[d.getDay()]}) ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return `${getJstYear(d)}年${getJstMonth(d)}月${getJstDate(d)}日(${days[getJstDayOfWeek(d)]}) ${String(getJstHour(d)).padStart(2, "0")}:${String(getJstMinute(d)).padStart(2, "0")}`;
 }
 
 function fmtHm(d: Date): string {
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return `${String(getJstHour(d)).padStart(2, "0")}:${String(getJstMinute(d)).padStart(2, "0")}`;
 }
 
 function menuLines(menus: MailMenu[]): string {

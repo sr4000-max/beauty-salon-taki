@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { addDays, formatJpDateLong, startOfDay } from "@/lib/time";
+import { addDays, formatJpDateLong, getJstHm, startOfDay } from "@/lib/time";
 
 const statusLabel: Record<string, string> = {
   BOOKED: "予約中",
@@ -158,5 +158,5 @@ function Card({ label, value }: { label: string; value: number }) {
 }
 
 function fmtHm(d: Date): string {
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return getJstHm(d);
 }

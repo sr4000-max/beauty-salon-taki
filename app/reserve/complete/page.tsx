@@ -7,7 +7,12 @@ import {
   buildGoogleCalendarUrl,
   buildReservationCalendarEvent,
 } from "@/lib/calendar";
-import { formatJpDateLong, minToTimeStr } from "@/lib/time";
+import {
+  formatJpDateLong,
+  getJstHour,
+  getJstMinute,
+  minToTimeStr,
+} from "@/lib/time";
 
 export const metadata = { title: "予約完了｜Beauty Salon TAKI" };
 
@@ -64,9 +69,10 @@ export default async function CompletePage({
     });
     googleCalendarUrl = buildGoogleCalendarUrl(event);
     const startMin =
-      reservation.startAt.getHours() * 60 + reservation.startAt.getMinutes();
+      getJstHour(reservation.startAt) * 60 +
+      getJstMinute(reservation.startAt);
     const endMin =
-      reservation.endAt.getHours() * 60 + reservation.endAt.getMinutes();
+      getJstHour(reservation.endAt) * 60 + getJstMinute(reservation.endAt);
     timeLabel = `${formatJpDateLong(reservation.startAt)} ${minToTimeStr(startMin)}〜${minToTimeStr(endMin)}`;
   }
 

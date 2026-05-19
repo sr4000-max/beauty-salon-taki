@@ -7,6 +7,9 @@ import {
   combineDateAndMin,
   dateToYmd,
   formatJpDateLong,
+  getJstDayOfWeek,
+  getJstHour,
+  getJstMinute,
   minToTimeStr,
   startOfDay,
   ymdToDate,
@@ -27,7 +30,7 @@ export default async function CalendarPage({
   const today = startOfDay(new Date());
   const date = sp.date ? ymdToDate(sp.date) : today;
   const ymd = dateToYmd(date);
-  const dayOfWeek = date.getDay();
+  const dayOfWeek = getJstDayOfWeek(date);
   const dateOnly = ymdToDate(ymd);
 
   const [store, staff, reservations, holiday, blocks] = await Promise.all([
@@ -332,8 +335,8 @@ export default async function CalendarPage({
                           >
                             <div className="font-bold truncate">
                               {minToTimeStr(
-                                startsHere.startAt.getHours() * 60 +
-                                  startsHere.startAt.getMinutes(),
+                                getJstHour(startsHere.startAt) * 60 +
+                                  getJstMinute(startsHere.startAt),
                               )}
                               {" "}
                               {startsHere.customerName}

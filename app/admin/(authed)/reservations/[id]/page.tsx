@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { updateReservationStatusAction } from "@/lib/actions/reservation";
-import { formatJpDateLong } from "@/lib/time";
+import { formatJpDateLong, getJstHm } from "@/lib/time";
 
 export default async function ReservationDetailPage({
   params,
@@ -145,5 +145,5 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function fmt(d: Date) {
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return getJstHm(d);
 }

@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma/client";
 import { cancelByTokenAction } from "@/lib/actions/reservation";
-import { formatJpDateLong, minToTimeStr } from "@/lib/time";
+import {
+  formatJpDateLong,
+  getJstHour,
+  getJstMinute,
+  minToTimeStr,
+} from "@/lib/time";
 import { SiteHeader } from "../../_components/SiteHeader";
 import { SiteFooter } from "../../_components/SiteFooter";
 
@@ -158,7 +163,7 @@ function ReservationCard({
           <Row label="お名前" value={r.customerName} />
           <Row
             label="日時"
-            value={`${formatJpDateLong(r.startAt)} ${minToTimeStr(r.startAt.getHours() * 60 + r.startAt.getMinutes())}〜${minToTimeStr(r.endAt.getHours() * 60 + r.endAt.getMinutes())}`}
+            value={`${formatJpDateLong(r.startAt)} ${minToTimeStr(getJstHour(r.startAt) * 60 + getJstMinute(r.startAt))}〜${minToTimeStr(getJstHour(r.endAt) * 60 + getJstMinute(r.endAt))}`}
           />
           <Row label="担当" value={r.staff?.name ?? "—"} />
         </dl>

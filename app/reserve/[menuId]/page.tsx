@@ -6,6 +6,9 @@ import {
   addDays,
   dateToYmd,
   formatJpDate,
+  getJstDate,
+  getJstDayOfWeek,
+  getJstMonth,
   minToTimeStr,
   startOfDay,
 } from "@/lib/time";
@@ -213,7 +216,7 @@ export default async function ReservePage({
                     </th>
                     {dates.map((d, i) => {
                       const isClosed = availabilities[i].isClosed;
-                      const dow = d.getDay();
+                      const dow = getJstDayOfWeek(d);
                       return (
                         <th
                           key={i}
@@ -226,7 +229,7 @@ export default async function ReservePage({
                           } ${isClosed ? "bg-[color:var(--color-bg-alt)]" : ""}`}
                         >
                           <div className="font-bold">
-                            {d.getMonth() + 1}/{d.getDate()}
+                            {getJstMonth(d)}/{getJstDate(d)}
                           </div>
                           <div className="text-[10px]">
                             ({["日", "月", "火", "水", "木", "金", "土"][dow]})

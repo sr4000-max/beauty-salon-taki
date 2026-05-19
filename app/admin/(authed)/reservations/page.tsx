@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { addDays, dateToYmd, formatJpDate, startOfDay, ymdToDate } from "@/lib/time";
+import {
+  addDays,
+  dateToYmd,
+  formatJpDate,
+  getJstHm,
+  startOfDay,
+  ymdToDate,
+} from "@/lib/time";
 
 export default async function AdminReservationsPage({
   searchParams,
@@ -150,7 +157,7 @@ export default async function AdminReservationsPage({
 }
 
 function fmt(d: Date) {
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return getJstHm(d);
 }
 
 function StatusBadge({ status }: { status: string }) {

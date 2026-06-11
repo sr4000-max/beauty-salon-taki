@@ -38,7 +38,7 @@ export default function Home() {
           <div className="concept-grid">
             <div className="concept-img">
               <img
-                src="/concept.jpg"
+                src="/concept.png"
                 alt="Beauty Salon TAKI 店内 - 施術の様子"
                 className="concept-photo"
               />

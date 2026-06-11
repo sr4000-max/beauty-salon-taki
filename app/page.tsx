@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { SiteHeader } from "./_components/SiteHeader";
 import { SiteFooter } from "./_components/SiteFooter";
 
@@ -37,9 +38,12 @@ export default function Home() {
           </div>
           <div className="concept-grid">
             <div className="concept-img">
-              <img
+              <Image
                 src="/concept.png"
                 alt="Beauty Salon TAKI 店内 - 施術の様子"
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 500px"
                 className="concept-photo"
               />
             </div>

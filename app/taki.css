@@ -468,15 +468,16 @@ button {
     radial-gradient(circle at 70% 70%, rgba(0,0,0,0.05) 0%, transparent 50%);
 }
 
-/* 実写真を埋め込む場合のスタイル。写真が無いとき(画像読込失敗) は
- * gradient 背景 + radial overlay がそのまま見える。 */
+/* 実写真を埋め込む場合のスタイル。Next.js <Image fill> は
+ * position:absolute + width/height:100% を自動付与するので、
+ * ここでは object-fit / object-position だけ指定する。
+ *
+ * object-position: center 25% にすることで、人物の顔・上半身がしっかり見えるよう
+ * 上寄りでクロップする (default の center だと頭が切れる)。
+ */
 .concept-photo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
   object-fit: cover;
-  display: block;
+  object-position: center 25%;
   z-index: 1;
 }
 .concept-img:has(.concept-photo) ::after {

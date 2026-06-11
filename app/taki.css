@@ -468,6 +468,21 @@ button {
     radial-gradient(circle at 70% 70%, rgba(0,0,0,0.05) 0%, transparent 50%);
 }
 
+/* 実写真を埋め込む場合のスタイル。写真が無いとき(画像読込失敗) は
+ * gradient 背景 + radial overlay がそのまま見える。 */
+.concept-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  z-index: 1;
+}
+.concept-img:has(.concept-photo) ::after {
+  display: none;
+}
+
 .concept-text h3 {
   font-family: var(--font-jp-serif);
   font-size: 26px;

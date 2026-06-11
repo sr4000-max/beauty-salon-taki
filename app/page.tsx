@@ -36,7 +36,13 @@ export default function Home() {
             <h2 className="section-title">わたしたちの想い</h2>
           </div>
           <div className="concept-grid">
-            <div className="concept-img"></div>
+            <div className="concept-img">
+              <img
+                src="/concept.jpg"
+                alt="Beauty Salon TAKI 店内 - 施術の様子"
+                className="concept-photo"
+              />
+            </div>
             <div className="concept-text">
               <h3>しっかりとした技術に裏打ちされた、信頼のサロン。</h3>
               <p>

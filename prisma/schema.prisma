@@ -119,3 +119,34 @@ model ReservationExtraMenu {
   @@unique([reservationId, menuId])
   @@index([reservationId])
 }
+
+// ============================================================
+// 脱毛回数券（QR コード管理）
+// ============================================================
+model Ticket {
+  id           Int         @id @default(autoincrement())
+  token        String      @unique
+  customerName String
+  treatment    String
+  totalCount   Int
+  usedCount    Int         @default(0)
+  expiresAt    DateTime?
+  note         String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  logs         TicketLog[]
+
+  @@index([customerName])
+  @@index([expiresAt])
+}
+
+model TicketLog {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  action    String // 'issued' | 'use' | 'cancel'
+  staffNote String?
+  createdAt DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+}

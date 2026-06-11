@@ -7,6 +7,7 @@ const NAV = [
   { href: "/admin/calendar", label: "カレンダー" },
   { href: "/admin/reservations", label: "予約一覧" },
   { href: "/admin/reservations/new", label: "新規予約" },
+  { href: "/admin/tickets", label: "回数券" },
   { href: "/admin/staff", label: "スタッフ" },
   { href: "/admin/categories", label: "カテゴリ" },
   { href: "/admin/menus", label: "メニュー" },

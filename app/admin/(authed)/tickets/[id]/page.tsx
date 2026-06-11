@@ -114,12 +114,12 @@ export default async function TicketDetailPage({
           <TicketQR url={customerUrl} />
           <div className="mt-4 flex gap-2">
             <a
-              href={`/admin/tickets/${ticket.id}/print`}
+              href={`/admin/tickets/${ticket.id}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-stone-700 hover:bg-stone-800 text-white text-sm font-medium px-4 py-1.5 rounded"
             >
-              🖨 印刷
+              📄 PDF ダウンロード
             </a>
           </div>
         </div>

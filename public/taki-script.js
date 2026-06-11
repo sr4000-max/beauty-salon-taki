@@ -1,7 +1,9 @@
 /* ============================================
-   ハンバーガーメニュー
+   初期化エントリポイント
+   Next.js <Script strategy="afterInteractive"> は DOMContentLoaded 発火後に
+   読み込まれることがあるので、readyState を確認して即時 init するパターンに変更。
 ============================================ */
-document.addEventListener('DOMContentLoaded', () => {
+function __takiInit() {
   const hamburger = document.getElementById('hamburger');
   const navSp = document.getElementById('navSp');
 
@@ -505,4 +507,11 @@ ${reserveData.note ? `\n■ご要望\n${reserveData.note}\n` : ''}
 
   // 初期化
   updateMenuSummary();
-});
+}
+
+// DOM が既に出来上がっていれば即時実行、まだなら DOMContentLoaded を待つ。
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', __takiInit);
+} else {
+  __takiInit();
+}

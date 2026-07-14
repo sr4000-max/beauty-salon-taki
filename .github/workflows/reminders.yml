@@ -21,7 +21,11 @@ jobs:
             APP_URL="https://beauty-salon-taki.vercel.app"
           fi
           echo "Calling ${APP_URL}/api/cron/reminders ..."
+          # --max-time 45: 応答が 45 秒返らなければ打ち切り (ハングでジョブ全体が
+          # timeout-minutes に達して Cancelled になるのを防ぐ)
+          # --retry 2 --retry-delay 10: 一時的なエラー/タイムアウト時は 10 秒空けて最大 2 回再試行
           response=$(curl -sS -w "\n%{http_code}" \
+            --max-time 45 --retry 2 --retry-delay 10 --retry-all-errors \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             "${APP_URL}/api/cron/reminders")
           body=$(echo "$response" | sed '$d')

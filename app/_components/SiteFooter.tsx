@@ -27,6 +27,15 @@ export function SiteFooter() {
             <p className="footer-title">CONTACT</p>
             <p>〒895-0055<br />鹿児島県薩摩川内市<br />西開聞町1-11</p>
             <p>TEL: <a href="tel:0996-22-4342">0996-22-4342</a></p>
+            <p style={{ marginTop: "8px" }}>
+              <a
+                href="https://taki-line-harness.bstaki.workers.dev/auth/line?ref=setup"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                LINEで問い合わせ →
+              </a>
+            </p>
           </div>
         </div>
         <p className="copyright">© 2026 Beauty Salon TAKI. All Rights Reserved.</p>

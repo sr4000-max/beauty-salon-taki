@@ -1,7 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
+import { QRCodeSVG } from "qrcode.react";
 import { SiteHeader } from "./_components/SiteHeader";
 import { SiteFooter } from "./_components/SiteFooter";
+
+// LINE 公式アカウント連携 URL
+// - LINE_BUTTON_URL: PC/スマホからクリックする用 (LIFF 経由で追加フロー起動)
+// - LINE_QR_URL: QR コードにエンコードする URL (スマホカメラで読取り→LINEアプリ起動)
+const LINE_BUTTON_URL =
+  "https://taki-line-harness.bstaki.workers.dev/auth/line?ref=setup";
+const LINE_QR_URL =
+  "https://liff.line.me/2010751138-wW8tMGtM?liffId=2010751138-wW8tMGtM&ref=setup";
 
 export const metadata = {
   title: "Beauty Salon TAKI｜鹿児島県薩摩川内市の美容室・ビューティーサロンたき",
@@ -155,12 +164,94 @@ export default function Home() {
         </div>
       </section>
 
+      {/* LINE でお問い合わせ */}
+      <section className="section" id="line">
+        <div className="container container-narrow">
+          <div className="section-head">
+            <p className="section-en">LINE</p>
+            <h2 className="section-title">LINEでお問い合わせ</h2>
+            <p className="section-desc">
+              ご予約のご相談・お問い合わせは LINE 公式アカウントが便利です。
+              <br className="hidden md:inline" />
+              メニューや空き状況について、お気軽にメッセージください。
+            </p>
+          </div>
+
+          <div className="line-grid">
+            {/* 左: 追加ボタン */}
+            <div className="line-block">
+              <p className="line-block-label">スマホの方はこちら</p>
+              <a
+                href={LINE_BUTTON_URL}
+                className="line-btn"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg
+                  className="line-icon"
+                  viewBox="0 0 320 320"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M160 32C87 32 27 79 27 137c0 52 47 96 111 105 4 1 10 3 11 6 1 3 1 8 0 11l-2 11c-1 3-3 13 11 7 14-6 76-45 104-77 20-22 33-45 33-63C295 79 235 32 160 32z"
+                  />
+                  <path
+                    fill="#06C755"
+                    d="M259 122h-19c-1 0-1 0-1-1v-29c0-1 0-2 1-2h19c1 0 2 1 2 2v29c0 1-1 1-2 1zM152 122h-19c-1 0-1 0-1-1v-29c0-1 0-2 1-2h19c1 0 2 1 2 2v29c0 1-1 1-2 1zM194 122h-19c-1 0-1 0-1-1v-15l-13 15c0 1-1 1-1 1h-19c-1 0-2-1-2-2V91c0-1 1-2 2-2h19c1 0 1 0 1 1v15l13-15h20c1 0 2 1 2 2v29c0 1-1 1-2 1zM240 122h-31c-1 0-2-1-2-2V91c0-1 1-2 2-2h31c1 0 2 1 2 2v6c0 1-1 2-2 2h-22v5h22c1 0 2 1 2 2v6c0 1-1 2-2 2h-22v5h22c1 0 2 1 2 2v6c0 1-1 1-2 1z"
+                  />
+                </svg>
+                <span>LINEで友だち追加</span>
+              </a>
+              <p className="line-hint">
+                タップで LINE アプリが開きます
+              </p>
+            </div>
+
+            {/* 右: QR コード */}
+            <div className="line-block">
+              <p className="line-block-label">PC の方は QR で読み取り</p>
+              <div className="line-qr-frame">
+                <QRCodeSVG
+                  value={LINE_QR_URL}
+                  size={180}
+                  level="M"
+                  marginSize={0}
+                  fgColor="#2d2620"
+                />
+              </div>
+              <p className="line-hint">
+                スマホのカメラで読み取ってください
+              </p>
+            </div>
+          </div>
+
+          <p className="line-note-under">
+            ※ お急ぎの場合はお電話でも承っています：
+            <a
+              href="tel:0996-22-4342"
+              className="text-[color:var(--color-accent)] underline"
+            >
+              0996-22-4342
+            </a>
+          </p>
+        </div>
+      </section>
+
       <section className="cta-section">
         <div className="container">
           <h2>ご予約・お問い合わせ</h2>
-          <p>オンライン予約は24時間受付中。お急ぎの方はお電話でも承ります。</p>
+          <p>オンライン予約は24時間受付中。ご相談は LINE から。</p>
           <div className="cta-buttons">
             <Link href="/menus" className="btn-primary">オンライン予約</Link>
+            <a
+              href={LINE_BUTTON_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-line-cta"
+            >
+              LINEで問い合わせ
+            </a>
             <a href="tel:0996-22-4342" className="btn-secondary">電話で予約</a>
           </div>
         </div>

@@ -45,6 +45,15 @@ export function SiteFooter() {
                 Instagram @beautysalontaki →
               </a>
             </p>
+            <p style={{ marginTop: "4px" }}>
+              <a
+                href="https://www.facebook.com/taki.bs1"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Facebook →
+              </a>
+            </p>
           </div>
         </div>
         <p className="copyright">© 2026 Beauty Salon TAKI. All Rights Reserved.</p>

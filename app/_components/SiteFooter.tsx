@@ -36,6 +36,15 @@ export function SiteFooter() {
                 LINEで問い合わせ →
               </a>
             </p>
+            <p style={{ marginTop: "4px" }}>
+              <a
+                href="https://www.instagram.com/beautysalontaki/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Instagram @beautysalontaki →
+              </a>
+            </p>
           </div>
         </div>
         <p className="copyright">© 2026 Beauty Salon TAKI. All Rights Reserved.</p>

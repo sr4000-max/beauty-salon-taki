@@ -131,7 +131,7 @@ const JSON_LD = {
       closes: "19:00",
     },
   ],
-  sameAs: [] as string[],
+  sameAs: ["https://www.instagram.com/beautysalontaki/"],
   hasOfferCatalog: {
     "@type": "OfferCatalog",
     name: "サロンメニュー",

@@ -32,7 +32,15 @@ export default async function ReservationDetailPage({
       >
         ← 予約一覧へ
       </Link>
-      <h1 className="text-2xl font-bold mt-2 mb-6">予約詳細 #{r.id}</h1>
+      <div className="flex items-center justify-between mt-2 mb-6 gap-3 flex-wrap">
+        <h1 className="text-2xl font-bold">予約詳細 #{r.id}</h1>
+        <Link
+          href={`/admin/reservations/${r.id}/edit`}
+          className="bg-stone-900 hover:bg-stone-800 text-white text-sm font-medium px-4 py-2 rounded"
+        >
+          ✎ 予約内容を編集
+        </Link>
+      </div>
 
       <div className="bg-white border border-stone-200 rounded p-6 mb-4 space-y-3 text-sm">
         <div>

@@ -363,6 +363,103 @@ export async function createAdminReservationAction(formData: FormData) {
   redirect("/admin/reservations");
 }
 
+const adminUpdateSchema = adminCreateSchema.extend({
+  id: z.coerce.number().int().positive(),
+});
+
+export async function updateAdminReservationAction(formData: FormData) {
+  await requireAdmin();
+  const extraIdsRaw = formData.getAll("extraMenuIds").map(String).join(",");
+  const parsed = adminUpdateSchema.parse({
+    id: formData.get("id"),
+    menuId: formData.get("menuId"),
+    extraMenuIds: extraIdsRaw,
+    staffId: formData.get("staffId"),
+    date: formData.get("date"),
+    startTime: formData.get("startTime"),
+    customerName: formData.get("customerName"),
+    customerPhone: formData.get("customerPhone"),
+    customerKana: formData.get("customerKana") ?? "",
+    customerEmail: formData.get("customerEmail") ?? "",
+    notes: formData.get("notes") ?? "",
+    force: formData.get("force"),
+  });
+
+  const existing = await prisma.reservation.findUnique({
+    where: { id: parsed.id },
+  });
+  if (!existing) return { error: "予約が見つかりません" };
+
+  const extraIds = parseMenuIds(parsed.extraMenuIds).filter(
+    (id) => id !== parsed.menuId,
+  );
+  const menuIds = [parsed.menuId, ...extraIds];
+  const menus = await prisma.menu.findMany({ where: { id: { in: menuIds } } });
+  if (menus.length !== menuIds.length) {
+    return { error: "メニューの一部が見つかりません" };
+  }
+  const orderedMenus = menuIds
+    .map((id) => menus.find((m) => m.id === id))
+    .filter((m): m is (typeof menus)[number] => !!m);
+  const totalDuration = orderedMenus.reduce(
+    (s, m) => s + m.durationMinutes,
+    0,
+  );
+
+  const [h, m] = parsed.startTime.split(":").map(Number);
+  const startAt = combineDateAndMin(parsed.date, h * 60 + m);
+  const endAt = new Date(startAt.getTime() + totalDuration * 60 * 1000);
+
+  if (!parsed.force) {
+    // 自分自身は除外して衝突判定
+    const conflict = await prisma.reservation.findFirst({
+      where: {
+        id: { not: parsed.id },
+        status: "BOOKED",
+        staffId: parsed.staffId,
+        startAt: { lt: endAt },
+        endAt: { gt: startAt },
+      },
+    });
+    if (conflict) {
+      return {
+        error:
+          "指定時間にこのスタッフの別の予約があります。強制更新する場合は「強制更新」にチェックしてください。",
+      };
+    }
+  }
+
+  // extras は差分ではなく丸ごと入れ替え (シンプル)
+  await prisma.$transaction([
+    prisma.reservationExtraMenu.deleteMany({
+      where: { reservationId: parsed.id },
+    }),
+    prisma.reservation.update({
+      where: { id: parsed.id },
+      data: {
+        customerName: parsed.customerName,
+        customerKana: parsed.customerKana || null,
+        customerPhone: parsed.customerPhone,
+        customerEmail: parsed.customerEmail || null,
+        notes: parsed.notes || null,
+        menuId: parsed.menuId,
+        staffId: parsed.staffId,
+        startAt,
+        endAt,
+        extras: {
+          create: extraIds.map((id, i) => ({ menuId: id, sortOrder: i })),
+        },
+      },
+    }),
+  ]);
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/calendar");
+  revalidatePath("/admin/reservations");
+  revalidatePath(`/admin/reservations/${parsed.id}`);
+  redirect(`/admin/reservations/${parsed.id}`);
+}
+
 export async function updateReservationStatusAction(formData: FormData) {
   await requireAdmin();
   const id = Number(formData.get("id"));

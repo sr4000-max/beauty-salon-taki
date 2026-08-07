@@ -5,9 +5,13 @@
  * 認証: Authorization: Bearer ${CRON_SECRET}
  *
  * 処理:
- *   1. 23〜25時間後に開始する予約 → 1日前リマインダー送信
- *   2. 25〜35分後に開始する予約 → 30分前リマインダー送信
+ *   1. 23〜25時間後に開始する予約 → 1日前リマインダー送信 (窓 2時間)
+ *   2. 20〜40分後に開始する予約 → 30分前リマインダー送信 (窓 20分)
  *   いずれも reminder*SentAt が null のものだけが対象 (多重送信防止)。
+ *
+ * 窓を広めに取っている理由: GitHub Actions の 5分 cron はまれに
+ * "job was not acquired by Runner" のような一時障害でスキップされることが
+ * ある。20分窓なら 5分cron 4回のうち1回でも成功すれば取りこぼしゼロ。
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -140,9 +144,11 @@ export async function GET(req: NextRequest) {
   // 1日前リマインダー: 23時間後 〜 25時間後 (2時間ウィンドウ)
   const dayBeforeStart = new Date(now.getTime() + 23 * 60 * 60 * 1000);
   const dayBeforeEnd = new Date(now.getTime() + 25 * 60 * 60 * 1000);
-  // 30分前リマインダー: 25分後 〜 35分後 (10分ウィンドウ — 5分cron でも取り逃がさない)
-  const shortBeforeStart = new Date(now.getTime() + 25 * 60 * 1000);
-  const shortBeforeEnd = new Date(now.getTime() + 35 * 60 * 1000);
+  // 30分前リマインダー: 20分後 〜 40分後 (20分ウィンドウ — GitHub Actions が
+  // 何回か連続で失敗しても取り逃がさないよう広めに取る。メール件名は
+  // 「まもなくご予約のお時間です」なので 20〜40分前ならまだ自然な文言)
+  const shortBeforeStart = new Date(now.getTime() + 20 * 60 * 1000);
+  const shortBeforeEnd = new Date(now.getTime() + 40 * 60 * 1000);
 
   const baseUrl = buildBaseUrl(req);
   const store = await prisma.store.findFirst();

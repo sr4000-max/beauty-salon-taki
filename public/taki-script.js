@@ -4,22 +4,6 @@
    読み込まれることがあるので、readyState を確認して即時 init するパターンに変更。
 ============================================ */
 function __takiInit() {
-  const hamburger = document.getElementById('hamburger');
-  const navSp = document.getElementById('navSp');
-
-  if (hamburger && navSp) {
-    hamburger.addEventListener('click', () => {
-      hamburger.classList.toggle('open');
-      navSp.classList.toggle('open');
-    });
-    navSp.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        hamburger.classList.remove('open');
-        navSp.classList.remove('open');
-      });
-    });
-  }
-
   /* ============================================
      スクロール時のフェードイン
   ============================================ */

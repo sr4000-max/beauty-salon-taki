@@ -1,10 +1,7 @@
 name: Send reservation reminders
 
 on:
-  schedule:
-    # 5 分ごと (UTC) — GitHub Actions cron は混雑時 5〜10 分遅延することがある
-    - cron: "*/5 * * * *"
-  # 手動実行用 (GitHub UI から「Run workflow」で叩ける)
+  # Vercel Cron に移行済み。手動実行用 (GitHub UI から「Run workflow」で叩ける)
   workflow_dispatch: {}
 
 jobs:

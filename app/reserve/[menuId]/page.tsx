@@ -273,6 +273,7 @@ export default async function ReservePage({
                             {clickable ? (
                               <Link
                                 href={href}
+                                prefetch={false}
                                 className={`block py-1.5 hover:bg-[color:var(--color-bg-alt)] ${meta.cls} font-bold`}
                               >
                                 {meta.sym}
